@@ -1,0 +1,12 @@
+package com.programming.techie.productservice.dto;
+
+import java.math.BigDecimal;
+
+public class ProductRequest 
+{
+
+	private String id;
+	private String name;
+	private String descripation;
+	private BigDecimal price;
+}

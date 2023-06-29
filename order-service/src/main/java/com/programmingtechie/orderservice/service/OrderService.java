@@ -1,0 +1,93 @@
+package com.programmingtechie.orderservice.service;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.sleuth.Span;
+import org.springframework.cloud.sleuth.Tracer;
+import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.reactive.function.client.WebClient;
+
+import com.programmingtechie.orderservice.dto.InventoryResponse;
+import com.programmingtechie.orderservice.dto.OrderLineItemsDto;
+import com.programmingtechie.orderservice.dto.OrderRequest;
+import com.programmingtechie.orderservice.event.OrderPlacedEvent;
+import com.programmingtechie.orderservice.model.Order;
+import com.programmingtechie.orderservice.model.OrderLineItems;
+import com.programmingtechie.orderservice.repository.OrderRepository;
+
+@Service
+@Transactional
+public class OrderService {
+	
+	@Autowired
+	private OrderRepository orderRepository;
+	
+	@Autowired
+	private WebClient.Builder webClientBuilder;
+	
+	private Tracer tracer;
+	@Autowired
+	private KafkaTemplate<String,OrderPlacedEvent> kafkaTemplate;
+	
+	public String placeOrder(OrderRequest orderRequest)
+	{
+		Order order = new Order();
+		
+		order.setOrderNumber(UUID.randomUUID().toString());
+		Object[] orderLineItems = orderRequest.getOrderLineItemDtoList().stream().map(this::mapToDto).toArray();
+		List<Object> asList = Arrays.asList(orderLineItems);
+		List<OrderLineItems> mythings = (List<OrderLineItems>) (Object) asList;
+		order.setOrderLineItemsList(mythings);
+		
+		Object[] skuCodesArray =  order.getOrderLineItemsList().stream().map(OrderLineItems::getSkuCode).toArray();
+		List<Object> skuCodes = Arrays.asList(skuCodesArray);
+		
+		Span inventoryServiceLookup = tracer.nextSpan().name("InventoryServiceLookUp");
+		
+		try(Tracer.SpanInScope spanInScopeType =tracer.withSpan(inventoryServiceLookup.start()))
+		{
+			//Call Invenotry service  and place order if product is in stock
+			InventoryResponse [] inventoryResponsArray = webClientBuilder.build().get().uri("http://inventory-service/api/inventory",uriBuilder->uriBuilder.queryParam("skuCode", skuCodes).build())
+				   .retrieve()
+				   .bodyToMono(InventoryResponse[].class)
+				   .block();
+			
+			boolean allProductsInStock=Arrays.stream(inventoryResponsArray).allMatch(InventoryResponse::isInStock);
+		   
+		   if(allProductsInStock)
+		   {
+			   orderRepository.save(order);
+			   kafkaTemplate.send("notificationTopic", new OrderPlacedEvent(order.getOrderNumber()));
+			   return "Order placed successfully";
+		   }
+		   else
+		   {
+			   throw new IllegalArgumentException("Product is not in stock, please try again letter");
+		   }
+			
+		
+		}
+		finally {
+			inventoryServiceLookup.end();
+		}
+	}
+		
+		
+	
+	 private OrderLineItems mapToDto(OrderLineItemsDto orderLineItemsDto) 
+	 {
+	        OrderLineItems orderLineItems = new OrderLineItems();
+	        orderLineItems.setPrice(orderLineItemsDto.getPrice());
+	        orderLineItems.setQuantity(orderLineItemsDto.getQuantity());
+	        orderLineItems.setSkuCode(orderLineItemsDto.getSkuCode());
+	        return orderLineItems;
+	    }
+
+}

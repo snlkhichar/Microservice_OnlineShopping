@@ -1,0 +1,5 @@
+package com.programmingtechie.discoveryserver.config;
+
+public class SecurityConfig {
+
+}

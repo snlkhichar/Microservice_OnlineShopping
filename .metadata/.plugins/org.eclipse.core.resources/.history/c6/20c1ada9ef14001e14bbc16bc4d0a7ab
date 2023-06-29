@@ -1,0 +1,39 @@
+package com.programmingtechie.inventoryservice.service;
+
+
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.programmingtechie.inventoryservice.dto.InventoryResponse;
+import com.programmingtechie.inventoryservice.model.Inventory;
+import com.programmingtechie.inventoryservice.repository.InventoryRepository;
+
+@Service
+public class InventoryService 
+{
+	@Autowired
+	private InventoryRepository inventoryRepository;
+	
+	@Transactional(readOnly = true)
+	public List<InventoryResponse> isInStock(List<String> skuCode)
+	{
+		
+		List<Inventory> findBySkuCodeInList = inventoryRepository.findBySkuCodeIn(skuCode);
+		System.out.println("InventoryService->isInStock->after fetching from database");
+		findBySkuCodeInList.forEach(System.out::println);
+		return findBySkuCodeInList.stream().map(inventory->mapToInventoryResponse(inventory)).collect(Collectors.toList());
+ }
+
+	private InventoryResponse mapToInventoryResponse(Inventory inventory)
+	{
+		InventoryResponse ir = new InventoryResponse(inventory.getSkuCode(), inventory.getQuantity()>0);
+		System.out.println("IR:"+ir.toString());
+		return ir;
+	}
+}

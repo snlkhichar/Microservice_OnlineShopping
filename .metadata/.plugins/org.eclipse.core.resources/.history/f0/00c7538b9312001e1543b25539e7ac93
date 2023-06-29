@@ -1,0 +1,50 @@
+package com.programming.techie.productservice.service;
+
+import java.util.List;
+import java.util.UUID;
+
+import org.springframework.stereotype.Service;
+
+import com.programming.techie.productservice.dto.ProductRequest;
+import com.programming.techie.productservice.dto.ProductResponse;
+import com.programming.techie.productservice.model.Product;
+import com.programming.techie.productservice.repository.ProductRepository;
+
+@Service
+public class ProductService {
+	
+	ProductRepository productRepository;
+	
+	
+	public ProductService(ProductRepository productRepository) {
+		super();
+		this.productRepository = productRepository;
+	}
+
+
+	public void createProduct(ProductRequest productRequest)
+	{
+		String randomUserId = UUID.randomUUID().toString();
+		Product product = new Product(productRequest.getName(),productRequest.getDescripation(),productRequest.getPrice());
+		productRequest.setId(randomUserId);
+		productRepository.save(product);
+		System.out.println("Product is saved:"+product.getId());
+	}
+
+
+	public List<ProductResponse> getAllProducts() 
+	{
+		List<Product> products = productRepository.findAll();
+		//now map Product class to productResponse class
+		products.stream().map(product->mapToProductResponse(product));
+		
+	}
+
+
+	private ProductResponse mapToProductResponse(Product product) 
+	{
+		ProductResponse productResponse = new ProductResponse(product.getId(),product.getName(),product.getDescripation(),product.getPrice());
+		return productResponse;
+	}
+
+}

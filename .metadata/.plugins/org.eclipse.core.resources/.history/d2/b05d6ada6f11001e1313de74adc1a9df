@@ -1,0 +1,5 @@
+package com.programming.techie.productservice.service;
+
+public class ProductService {
+
+}

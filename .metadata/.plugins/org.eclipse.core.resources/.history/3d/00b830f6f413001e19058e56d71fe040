@@ -1,0 +1,5 @@
+package com.programmingtechie.inventoryservice.repository;
+
+public interface InventoryRepository {
+
+}

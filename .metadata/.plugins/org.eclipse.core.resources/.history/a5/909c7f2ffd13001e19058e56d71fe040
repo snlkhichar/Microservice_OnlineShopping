@@ -1,0 +1,28 @@
+package com.programmingtechie.inventoryservice;
+
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+import com.programmingtechie.inventoryservice.model.Inventory;
+import com.programmingtechie.inventoryservice.repository.InventoryRepository;
+
+@SpringBootApplication
+public class InventoryServiceApplication {
+
+	public static void main(String[] args) 
+	{
+		SpringApplication.run(InventoryServiceApplication.class, args);
+	}
+	
+	public CommandLineRunner loadData(InventoryRepository inventoryRepository)
+	{
+		return args->
+		{
+			Inventory inventory = new Inventory();
+			inventory.setSkuCode("iphone_13");
+			inventory.setQuantity(100);
+		}
+	}
+
+}

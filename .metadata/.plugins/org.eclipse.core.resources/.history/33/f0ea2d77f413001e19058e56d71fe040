@@ -1,0 +1,9 @@
+package com.programmingtechie.inventoryservice.model;
+
+public class Inventory
+{
+	private Long id;
+	private String skuCode;
+	private Integer quantity;
+
+}

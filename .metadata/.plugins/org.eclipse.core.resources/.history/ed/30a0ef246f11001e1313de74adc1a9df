@@ -1,0 +1,5 @@
+package com.programming.techie.productservice.dto;
+
+public class ProductRequest {
+
+}
